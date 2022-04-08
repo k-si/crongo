@@ -1,0 +1,8 @@
+http:
+  port: 8080
+  read_time_out: 5000
+  write_time_out: 5000
+etcd:
+  endpoints:
+    - 127.0.0.1:2379
+  dial_time_out: 5000
