@@ -41,15 +41,20 @@ func main() {
 	}
 	defer server.Manager.End()
 
-	// 初始化scheduler
-	ctx, cancel := context.WithCancel(context.Background())
-	server.InitJobScheduler(ctx)
-	defer cancel()
+	// 开启job调度
+	scheduleCtx, scheduleCancel := context.WithCancel(context.Background())
+	defer scheduleCancel()
+	server.ScheduleJob(scheduleCtx)
 
-	// 启动worker监听
-	ctx2, cancel2 := context.WithCancel(context.Background())
-	go server.WatchJob(ctx2)
-	defer cancel2()
+	// 开启job执行
+	executeCtx, executeCancel := context.WithCancel(context.Background())
+	defer executeCancel()
+	server.ExecuteJob(executeCtx)
+
+	// 开启job变动监听
+	watchCtx, watchCancel := context.WithCancel(context.Background())
+	defer watchCancel()
+	server.WatchJob(watchCtx)
 
 	// 启动http服务
 	go func() {
@@ -66,9 +71,9 @@ func main() {
 	<-sig
 
 	// 停止服务
-	ctx3, cancel3 := context.WithTimeout(context.TODO(), 5*time.Second)
-	defer cancel3()
-	if err = server.HttpServer.Shutdown(ctx3); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer shutdownCancel()
+	if err = server.HttpServer.Shutdown(shutdownCtx); err != nil {
 		log.Println("http shutdown error:", err)
 		return
 	}

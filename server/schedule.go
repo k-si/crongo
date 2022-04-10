@@ -13,6 +13,11 @@ const (
 	Delete = 1
 )
 
+const (
+	Waiting = 0
+	Running = 1
+)
+
 var Scheduler JobScheduler
 
 type JobEvent struct {
@@ -21,9 +26,10 @@ type JobEvent struct {
 }
 
 type JobPlan struct {
-	Job  *common.Job
-	Expr *cronexpr.Expression
-	Next time.Time // 下次执行时间
+	Job    *common.Job
+	Expr   *cronexpr.Expression
+	Next   time.Time // 下次执行时间
+	Status int
 }
 
 type JobScheduler struct {
@@ -31,7 +37,7 @@ type JobScheduler struct {
 	JobPlanTable map[string]*JobPlan
 }
 
-func InitJobScheduler(ctx context.Context) {
+func ScheduleJob(ctx context.Context) {
 	Scheduler = JobScheduler{
 		JobEventChan: make(chan *JobEvent, 1000),
 		JobPlanTable: make(map[string]*JobPlan),
@@ -46,9 +52,10 @@ func NewJobPlan(job *common.Job) (jp *JobPlan, err error) {
 		return
 	}
 	jp = &JobPlan{
-		Job:  job,
-		Expr: expr,
-		Next: expr.Next(time.Now()),
+		Job:    job,
+		Expr:   expr,
+		Next:   expr.Next(time.Now()),
+		Status: Waiting,
 	}
 	return
 }
@@ -105,7 +112,8 @@ func (sdr JobScheduler) TryScheduling() (interval time.Duration) {
 	for name, plan := range sdr.JobPlanTable {
 
 		if plan.Next.Before(now) || plan.Next.Equal(now) {
-			log.Println(name)
+			log.Println("[", name, "]", "scheduled,", "expected time:", plan.Next.Format(time.ANSIC), "actual time:", now.Format(time.ANSIC))
+			Executor.PushJobPlan(plan) // 交由executor执行任务
 			plan.Next = plan.Expr.Next(now)
 		}
 

@@ -10,7 +10,17 @@ import (
 	"strings"
 )
 
+var Watcher JobWatcher
+
+type JobWatcher struct {
+}
+
 func WatchJob(ctx context.Context) {
+	Watcher = JobWatcher{}
+	go Watcher.Watch(ctx)
+}
+
+func (w JobWatcher) Watch(ctx context.Context) {
 
 	var (
 		err     error
@@ -21,8 +31,16 @@ func WatchJob(ctx context.Context) {
 		log.Println("get revision err:", err)
 		return
 	}
+	for _, kv := range getResp.Kvs {
+		job := &common.Job{}
+		if err = json.Unmarshal(kv.Value, job); err != nil {
+			log.Println("job Unmarshal fail:", err)
+			continue
+		}
+		Scheduler.PushJobEvent(&JobEvent{Save, job})
+	}
 
-	watchChan := Manager.cli.Watch(context.TODO(), JobDir, clientv3.WithRev(getResp.Header.Revision + 1), clientv3.WithPrefix())
+	watchChan := Manager.cli.Watch(context.TODO(), JobDir, clientv3.WithRev(getResp.Header.Revision+1), clientv3.WithPrefix())
 
 	for {
 		select {
