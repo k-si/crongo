@@ -1,4 +1,4 @@
-package server
+package worker
 
 import (
 	"context"
@@ -27,7 +27,8 @@ func (w JobWatcher) Watch(ctx context.Context) {
 		getResp *clientv3.GetResponse
 	)
 
-	if getResp, err = Manager.cli.Get(context.TODO(), JobDir, clientv3.WithPrefix()); err != nil {
+	// 将所有job调入内存
+	if getResp, err = Connector.cli.Get(context.TODO(), common.JobDir, clientv3.WithPrefix()); err != nil {
 		log.Println("get revision err:", err)
 		return
 	}
@@ -40,8 +41,9 @@ func (w JobWatcher) Watch(ctx context.Context) {
 		Scheduler.PushJobEvent(&JobEvent{Save, job})
 	}
 
-	watchChan := Manager.cli.Watch(context.TODO(), JobDir, clientv3.WithRev(getResp.Header.Revision+1), clientv3.WithPrefix())
+	watchChan := Connector.cli.Watch(context.TODO(), common.JobDir, clientv3.WithRev(getResp.Header.Revision+1), clientv3.WithPrefix())
 
+	// 监听job变动
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,7 +80,7 @@ func pushJobEvent(opt int, e *clientv3.Event) {
 		je = &JobEvent{
 			opt,
 			&common.Job{
-				Name: strings.TrimPrefix(string(e.Kv.Key), JobDir),
+				Name: strings.TrimPrefix(string(e.Kv.Key), common.JobDir),
 			},
 		}
 	}

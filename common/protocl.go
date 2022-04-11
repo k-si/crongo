@@ -5,12 +5,14 @@ import (
 	"net/http"
 )
 
+// http request object
 type Job struct {
 	Name    string `json:"name"`
 	Command string `json:"command"`
 	Express string `json:"express"`
 }
 
+// http response object
 type RespCode int64
 
 const (

@@ -1,4 +1,4 @@
-package conf
+package worker
 
 import (
 	"github.com/spf13/viper"
@@ -7,14 +7,7 @@ import (
 var Cfg Config
 
 type Config struct {
-	HttpConfig `mapstructure:"http"`
 	EtcdConfig `mapstructure:"etcd"`
-}
-
-type HttpConfig struct {
-	Port         int `mapstructure:"port"`
-	ReadTimeOut  int `mapstructure:"read_time_out"`
-	WriteTimeOut int `mapstructure:"write_time_out"`
 }
 
 type EtcdConfig struct {

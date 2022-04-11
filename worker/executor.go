@@ -1,4 +1,4 @@
-package server
+package worker
 
 import (
 	"context"
@@ -38,24 +38,25 @@ func (e JobExecutor) Execute(ctx context.Context) {
 		default:
 			for plan = range e.PlanChan {
 
-				if plan.Status == Running {
-					continue
+				if plan.Status == Waiting {
+					// todo:抢分布式锁
+
+					// 如果抢锁成功
+					plan.Status = Running
+
+					// 执行job
+					cmd = exec.Command("/bin/bash", "-c", plan.Job.Command)
+					output, err = cmd.CombinedOutput()
+					if err != nil {
+						log.Println("[", plan.Job.Name, "]", "err:", err.Error())
+					}
+					if output != nil {
+						log.Println("[", plan.Job.Name, "]", "output:", string(output))
+					}
+
+					// 释放锁
+					plan.Status = Waiting
 				}
-
-				log.Println("[", plan.Job.Name, "]", "executed")
-
-				plan.Status = Running
-
-				cmd = exec.Command("/bin/bash", "-c", plan.Job.Command)
-				output, err = cmd.CombinedOutput()
-				if err != nil {
-					log.Println("err:", err.Error())
-				}
-				if output != nil {
-					log.Println("output:", string(output))
-				}
-
-				plan.Status = Waiting
 			}
 		}
 	}

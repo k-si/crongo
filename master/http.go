@@ -1,10 +1,9 @@
-package server
+package master
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/k-si/crongo/common"
-	"github.com/k-si/crongo/conf"
 	"net/http"
 	"time"
 )
@@ -13,10 +12,10 @@ var HttpServer http.Server
 
 func InitHttpServer() {
 	HttpServer = http.Server{
-		Addr:         fmt.Sprintf(":%d", conf.Cfg.Port),
+		Addr:         fmt.Sprintf(":%d", Cfg.Port),
 		Handler:      NewRouter(),
-		ReadTimeout:  time.Duration(conf.Cfg.ReadTimeOut) * time.Millisecond,
-		WriteTimeout: time.Duration(conf.Cfg.WriteTimeOut) * time.Millisecond,
+		ReadTimeout:  time.Duration(Cfg.ReadTimeOut) * time.Millisecond,
+		WriteTimeout: time.Duration(Cfg.WriteTimeOut) * time.Millisecond,
 	}
 }
 
@@ -43,7 +42,7 @@ func JobSave(ctx *gin.Context) {
 	if err = ctx.ShouldBindJSON(&job); err != nil {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Manager.SaveJob(&job); err != nil {
+	if err = Connector.SaveJob(&job); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)
@@ -55,7 +54,7 @@ func JobDelete(ctx *gin.Context) {
 	if jobName == "" {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Manager.DeleteJob(jobName); err != nil {
+	if err = Connector.DeleteJob(jobName); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)
@@ -66,7 +65,7 @@ func JobList(ctx *gin.Context) {
 		err  error
 		jobs []*common.Job
 	)
-	if jobs, err = Manager.ListJob(); err != nil {
+	if jobs, err = Connector.ListJob(); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, jobs)
@@ -78,7 +77,7 @@ func JobKill(ctx *gin.Context) {
 	if jobName == "" {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Manager.KillJob(jobName); err != nil {
+	if err = Connector.KillJob(jobName); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)

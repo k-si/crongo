@@ -1,6 +1,12 @@
-# crongo
+# Introduction
 
-crontab job scheduling service
+The project is a distributed task scheduling service, which is mainly used to schedule and execute Linux crontab tasks.
+The service can start one master node and multiple worker nodes, Store crontab tasks through etcd and provide
+distributed locks for multiple workers. The master module is responsible for the addition, deletion, modification and
+query of tasks on the HTTP interface, and the worker node is responsible Monitor etcd changes and maintain a scheduling
+table in memory. Multiple worker nodes can execute tasks concurrently.
+
+External exposure interface:
 
 ```
 Save job interface:
@@ -12,11 +18,11 @@ POST /job/save
 }
 
 Delete job interface:
-GET /job/delete? name=test
+GET /job/delete?name=test
 
 Query job interface:
 GET /job/list
 
 Kill job interface:
-GET /job/kill? name=test
+GET /job/kill?name=test
 ```

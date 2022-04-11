@@ -1,4 +1,4 @@
-package server
+package worker
 
 import (
 	"context"
@@ -9,11 +9,12 @@ import (
 )
 
 const (
+
+	// job event
 	Save   = 0
 	Delete = 1
-)
 
-const (
+	// job status
 	Waiting = 0
 	Running = 1
 )
@@ -91,6 +92,7 @@ func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
 	case Save:
 		jp, err := NewJobPlan(je.Job)
 		if err != nil {
+			log.Println("save [ ", je.Job.Name, " ] fail, err:", err)
 			return
 		}
 		sdr.JobPlanTable[je.Job.Name] = jp
@@ -112,7 +114,7 @@ func (sdr JobScheduler) TryScheduling() (interval time.Duration) {
 	for name, plan := range sdr.JobPlanTable {
 
 		if plan.Next.Before(now) || plan.Next.Equal(now) {
-			log.Println("[", name, "]", "scheduled,", "expected time:", plan.Next.Format(time.ANSIC), "actual time:", now.Format(time.ANSIC))
+			log.Println("[", name, "]", "scheduled,", "expected time:", plan.Next.Format(time.ANSIC), ", actual time:", now.Format(time.ANSIC))
 			Executor.PushJobPlan(plan) // 交由executor执行任务
 			plan.Next = plan.Expr.Next(now)
 		}
