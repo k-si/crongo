@@ -9,11 +9,6 @@ import (
 )
 
 const (
-
-	// job event
-	Save   = 0
-	Delete = 1
-
 	// job status
 	Waiting = 0
 	Running = 1
@@ -21,16 +16,13 @@ const (
 
 var Scheduler JobScheduler
 
-type JobEvent struct {
-	Opt int
-	Job *common.Job
-}
-
 type JobPlan struct {
-	Job    *common.Job
-	Expr   *cronexpr.Expression
-	Next   time.Time // 下次执行时间
-	Status int
+	Job      *common.Job
+	Expr     *cronexpr.Expression
+	Next     time.Time // 下次调度时间
+	Expected time.Time // 期望调度时间
+	Real     time.Time // 实际调度时间
+	Status   int
 }
 
 type JobScheduler struct {
@@ -79,12 +71,12 @@ func (sdr JobScheduler) Plan(ctx context.Context) {
 			sdr.HandleJobEvent(je) // 修正调度表
 		case <-t.C:
 		case <-ctx.Done():
-			goto END
+			goto end
 		}
 		interval = sdr.TryScheduling()
 		t.Reset(interval)
 	}
-END:
+end:
 }
 
 func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
@@ -108,13 +100,21 @@ func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
 // 此时只需等待1s
 func (sdr JobScheduler) TryScheduling() (interval time.Duration) {
 
+	var (
+		name string
+		plan *JobPlan
+	)
+
 	now := time.Now()
 	var near *time.Time
 
-	for name, plan := range sdr.JobPlanTable {
+	for name, plan = range sdr.JobPlanTable {
 
+		// 执行过期任务
 		if plan.Next.Before(now) || plan.Next.Equal(now) {
-			log.Println("[", name, "]", "scheduled,", "expected time:", plan.Next.Format(time.ANSIC), ", actual time:", now.Format(time.ANSIC))
+			log.Println("[", name, "]", "scheduled success")
+			plan.Expected = plan.Next
+			plan.Real = now
 			Executor.PushJobPlan(plan) // 交由executor执行任务
 			plan.Next = plan.Expr.Next(now)
 		}

@@ -10,9 +10,20 @@ import (
 	"strings"
 )
 
+const (
+	// job event
+	Save   = 0
+	Delete = 1
+)
+
 var Watcher JobWatcher
 
 type JobWatcher struct {
+}
+
+type JobEvent struct {
+	Opt int
+	Job *common.Job
 }
 
 func WatchJob(ctx context.Context) {
@@ -47,7 +58,7 @@ func (w JobWatcher) Watch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			goto END
+			goto end
 		default:
 			for watchResp := range watchChan {
 				for _, event := range watchResp.Events {
@@ -61,7 +72,7 @@ func (w JobWatcher) Watch(ctx context.Context) {
 			}
 		}
 	}
-END:
+end:
 
 	return
 }
