@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	EtcdConn EtcdConnector
+	EtcdConn  EtcdConnector
 	MongoConn MongoConnector
 )
 
@@ -100,6 +100,15 @@ type MongoConnector struct {
 	collection *mongo.Collection
 }
 
+// find filter
+type FindByName struct {
+	Name string `bson:"name"`
+}
+
+type SortByStartTime struct {
+	Order int `bson:"start_time"`
+}
+
 func InitMongoConnector() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(Cfg.ConnectTimeOut)*time.Millisecond)
 	defer cancel()
@@ -111,4 +120,30 @@ func InitMongoConnector() (err error) {
 
 func (conn MongoConnector) Close() (err error) {
 	return conn.cli.Disconnect(context.Background())
+}
+
+func (conn MongoConnector) LogList(name string, skip int, limit int) (logs []*common.JobLog, err error) {
+	var (
+		cursor *mongo.Cursor
+	)
+	logs = make([]*common.JobLog, 0)
+
+	if cursor, err = conn.collection.Find(context.TODO(),
+		&FindByName{Name: name},
+		options.Find().SetSort(&SortByStartTime{Order: -1}),
+		options.Find().SetSkip(int64(skip)),
+		options.Find().SetLimit(int64(limit))); err != nil {
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		jobLog := &common.JobLog{}
+		if err = cursor.Decode(jobLog); err != nil {
+			return
+		}
+		logs = append(logs, jobLog)
+	}
+
+	return
 }

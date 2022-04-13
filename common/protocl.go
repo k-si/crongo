@@ -5,14 +5,25 @@ import (
 	"net/http"
 )
 
-// http request object
+// vo object
 type Job struct {
 	Name    string `json:"name"`
 	Command string `json:"command"`
 	Express string `json:"express"`
 }
 
-// http response object
+type JobLog struct {
+	Name                 string `json:"name" bson:"name"`
+	Command              string `json:"command" bson:"command"`
+	Output               string `json:"output" bson:"output"`
+	ErrorInfo            string `json:"error_info" bson:"error_info"`
+	StartTime            int64  `json:"start_time" bson:"start_time"`
+	EndTime              int64  `json:"end_time" bson:"end_time"`
+	ExpectedScheduleTime int64  `json:"expected_schedule_time" bson:"expected_schedule_time"`
+	RealScheduleTime     int64  `json:"real_schedule_time" bson:"real_schedule_time"`
+}
+
+// http response format object
 type RespCode int64
 
 const (
