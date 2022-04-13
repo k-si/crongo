@@ -1,4 +1,13 @@
+app:
+  balance_optimization: false
+  job_event_chan_size: 1000
+  job_plan_chan_size: 1000
 etcd:
   endpoints:
     - 127.0.0.1:2379
   dial_time_out: 5000
+mongo:
+  apply_uri: mongodb://127.0.0.1:27017
+  connect_time_out: 5000
+  db_name: cron
+  collection_name: log

@@ -42,7 +42,7 @@ func JobSave(ctx *gin.Context) {
 	if err = ctx.ShouldBindJSON(&job); err != nil {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Connector.SaveJob(&job); err != nil {
+	if err = EtcdConn.SaveJob(&job); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)
@@ -54,7 +54,7 @@ func JobDelete(ctx *gin.Context) {
 	if jobName == "" {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Connector.DeleteJob(jobName); err != nil {
+	if err = EtcdConn.DeleteJob(jobName); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)
@@ -65,7 +65,7 @@ func JobList(ctx *gin.Context) {
 		err  error
 		jobs []*common.Job
 	)
-	if jobs, err = Connector.ListJob(); err != nil {
+	if jobs, err = EtcdConn.ListJob(); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, jobs)
@@ -77,7 +77,7 @@ func JobKill(ctx *gin.Context) {
 	if jobName == "" {
 		common.Response(ctx, common.CodeInvalidParam, nil, nil)
 	}
-	if err = Connector.KillJob(jobName); err != nil {
+	if err = EtcdConn.KillJob(jobName); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 	}
 	common.Response(ctx, common.CodeSuccess, nil, nil)

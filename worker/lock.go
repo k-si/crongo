@@ -29,29 +29,33 @@ func (lock *JobLock) Lock() (err error) {
 	)
 
 	// 自动续租
-	if grantResp, err = Connector.cli.Lease.Grant(context.TODO(), 5); err != nil {
+	if grantResp, err = EtcdConn.cli.Lease.Grant(context.TODO(), 5); err != nil {
 		return
 	}
 	keepCtx, keepCancel := context.WithCancel(context.TODO())
-	if keepAliveRespChan, err = Connector.cli.KeepAlive(keepCtx, grantResp.ID); err != nil {
+	if keepAliveRespChan, err = EtcdConn.cli.KeepAlive(keepCtx, grantResp.ID); err != nil {
 		goto Rollback
 	}
 
 	// 消费租约channel
 	go func() {
-		var keepAliveResp *clientv3.LeaseKeepAliveResponse
-		select {
-		case keepAliveResp = <-keepAliveRespChan:
-			if keepAliveResp == nil {
-				log.Println("[", lock.lockPath, "] stop to keep lease alive, leaseID:", grantResp.ID)
-				goto end
+		var (
+			keepAliveResp *clientv3.LeaseKeepAliveResponse
+		)
+		for {
+			select {
+			case keepAliveResp = <-keepAliveRespChan:
+				if keepAliveResp == nil {
+					log.Println("[", lock.lockPath, "] stop to keep lease alive, leaseID:", grantResp.ID)
+					goto end
+				}
 			}
 		}
 	end:
 	}()
 
 	// 事务(set if not exist) 实现加锁
-	txn = Connector.cli.Txn(context.TODO())
+	txn = EtcdConn.cli.Txn(context.TODO())
 	txn.If(clientv3.Compare(clientv3.CreateRevision(lock.lockPath), "=", 0)).
 		Then(clientv3.OpPut(lock.lockPath, "", clientv3.WithLease(grantResp.ID)))
 	if txnResp, err = txn.Commit(); err != nil {
@@ -71,9 +75,9 @@ func (lock *JobLock) Lock() (err error) {
 
 	// 锁资源回收
 Rollback:
-	log.Println("[", lock.lockPath, "] lock rollback, because", err)
+	log.Println("[", lock.lockPath, "] lock rollback,", err)
 	keepCancel()
-	Connector.cli.Revoke(context.TODO(), grantResp.ID) // 删除租约失败，租约过几秒也会自动撤销
+	EtcdConn.cli.Revoke(context.TODO(), grantResp.ID) // 删除租约失败，租约过几秒也会自动撤销
 
 	return
 }
@@ -82,7 +86,7 @@ func (lock *JobLock) UnLock() {
 	log.Println("[", lock.lockPath, "] unlock")
 	if lock.isLocked {
 		lock.cancelKeepAlive()
-		Connector.cli.Revoke(context.TODO(), lock.leaseId)
+		EtcdConn.cli.Revoke(context.TODO(), lock.leaseId)
 		lock.isLocked = false
 	}
 }

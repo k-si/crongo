@@ -5,10 +5,15 @@ import (
 	"encoding/json"
 	"github.com/k-si/crongo/common"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
-var Connector EtcdConnector
+var (
+	EtcdConn EtcdConnector
+	MongoConn MongoConnector
+)
 
 type EtcdConnector struct {
 	cfg clientv3.Config
@@ -21,13 +26,13 @@ func InitEtcdConnector() (err error) {
 		DialTimeout: time.Duration(Cfg.DialTimeOut) * time.Millisecond,
 	}
 	cli, err := clientv3.New(cfg)
-	Connector.cfg = cfg
-	Connector.cli = cli
+	EtcdConn.cfg = cfg
+	EtcdConn.cli = cli
 	return
 }
 
 func (etcd EtcdConnector) Close() error {
-	return Connector.cli.Close()
+	return EtcdConn.cli.Close()
 }
 
 func (etcd EtcdConnector) SaveJob(job *common.Job) (err error) {
@@ -77,6 +82,7 @@ func (etcd EtcdConnector) KillJob(jobName string) (err error) {
 		grantResp *clientv3.LeaseGrantResponse
 	)
 
+	// 租约自动过期
 	if grantResp, err = etcd.cli.Grant(context.TODO(), 1); err != nil {
 		return
 	}
@@ -85,4 +91,24 @@ func (etcd EtcdConnector) KillJob(jobName string) (err error) {
 	}
 
 	return
+}
+
+// mongodb
+type MongoConnector struct {
+	cli        *mongo.Client
+	db         *mongo.Database
+	collection *mongo.Collection
+}
+
+func InitMongoConnector() (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(Cfg.ConnectTimeOut)*time.Millisecond)
+	defer cancel()
+	MongoConn.cli, err = mongo.Connect(ctx, options.Client().ApplyURI(Cfg.ApplyUri))
+	MongoConn.db = MongoConn.cli.Database(Cfg.DBName)
+	MongoConn.collection = MongoConn.db.Collection(Cfg.CollectionName)
+	return
+}
+
+func (conn MongoConnector) Close() (err error) {
+	return conn.cli.Disconnect(context.Background())
 }

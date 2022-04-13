@@ -34,7 +34,11 @@ func main() {
 		log.Println("etcd init error:", err)
 		return
 	}
-	defer master.Connector.Close()
+	defer master.EtcdConn.Close()
+	if err = master.InitMongoConnector(); err != nil {
+		log.Println("mongo init error:", err)
+		return
+	}
 
 	// 启动http服务
 	go func() {

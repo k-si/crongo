@@ -1,12 +1,19 @@
 package worker
 
 import (
+	"context"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
-var Connector EtcdConnector
+var (
+	EtcdConn  EtcdConnector
+	MongoConn MongoConnector
+)
 
+// etcd
 type EtcdConnector struct {
 	cfg clientv3.Config
 	cli *clientv3.Client
@@ -18,11 +25,31 @@ func InitEtcdConnector() (err error) {
 		DialTimeout: time.Duration(Cfg.DialTimeOut) * time.Millisecond,
 	}
 	cli, err := clientv3.New(cfg)
-	Connector.cfg = cfg
-	Connector.cli = cli
+	EtcdConn.cfg = cfg
+	EtcdConn.cli = cli
 	return
 }
 
-func (etcd EtcdConnector) Close() error {
-	return Connector.cli.Close()
+func (conn EtcdConnector) Close() error {
+	return conn.cli.Close()
+}
+
+// mongodb
+type MongoConnector struct {
+	cli        *mongo.Client
+	db         *mongo.Database
+	collection *mongo.Collection
+}
+
+func InitMongoConnector() (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(Cfg.ConnectTimeOut)*time.Millisecond)
+	defer cancel()
+	MongoConn.cli, err = mongo.Connect(ctx, options.Client().ApplyURI(Cfg.ApplyUri))
+	MongoConn.db = MongoConn.cli.Database(Cfg.DBName)
+	MongoConn.collection = MongoConn.db.Collection(Cfg.CollectionName)
+	return
+}
+
+func (conn MongoConnector) Close() (err error) {
+	return conn.cli.Disconnect(context.Background())
 }

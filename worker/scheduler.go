@@ -17,12 +17,14 @@ const (
 var Scheduler JobScheduler
 
 type JobPlan struct {
-	Job      *common.Job
-	Expr     *cronexpr.Expression
-	Next     time.Time // 下次调度时间
-	Expected time.Time // 期望调度时间
-	Real     time.Time // 实际调度时间
-	Status   int
+	Job        *common.Job
+	Expr       *cronexpr.Expression
+	Next       time.Time // 下次调度时间
+	Expected   time.Time // 期望调度时间
+	Real       time.Time // 实际调度时间
+	Status     int
+	CancelCtx  context.Context // command命令及时被kill
+	CancelFunc context.CancelFunc
 }
 
 type JobScheduler struct {
@@ -32,7 +34,7 @@ type JobScheduler struct {
 
 func ScheduleJob(ctx context.Context) {
 	Scheduler = JobScheduler{
-		JobEventChan: make(chan *JobEvent, 1000),
+		JobEventChan: make(chan *JobEvent, Cfg.JobEventChanSize),
 		JobPlanTable: make(map[string]*JobPlan),
 	}
 	go Scheduler.Plan(ctx)
@@ -50,6 +52,7 @@ func NewJobPlan(job *common.Job) (jp *JobPlan, err error) {
 		Next:   expr.Next(time.Now()),
 		Status: Waiting,
 	}
+	jp.CancelCtx, jp.CancelFunc = context.WithCancel(context.TODO())
 	return
 }
 
@@ -81,15 +84,27 @@ end:
 
 func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
 	switch je.Opt {
-	case Save:
+	case common.SaveJob:
 		jp, err := NewJobPlan(je.Job)
 		if err != nil {
 			log.Println("save [ ", je.Job.Name, " ] fail, err:", err)
 			return
 		}
 		sdr.JobPlanTable[je.Job.Name] = jp
-	case Delete:
+	case common.DeleteJob:
 		delete(sdr.JobPlanTable, je.Job.Name)
+	case common.KillJob:
+		jp, ok := sdr.JobPlanTable[je.Job.Name]
+		if ok {
+			if jp.Status == Running {
+				log.Println("[", je.Job.Name, "] killed during running")
+				jp.CancelFunc()
+				// todo: 关于kill的功能需要再细化分析
+				//jp.CancelCtx, jp.CancelFunc = context.WithCancel(context.TODO())
+			}
+		} else {
+			log.Println("try kill [", je.Job.Name, "] , but not in jobPlanTable")
+		}
 	}
 }
 

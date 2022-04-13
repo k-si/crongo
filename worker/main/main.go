@@ -32,7 +32,12 @@ func main() {
 		log.Println("etcd init error:", err)
 		return
 	}
-	defer worker.Connector.Close()
+	defer worker.EtcdConn.Close()
+	if err = worker.InitMongoConnector(); err != nil {
+		log.Println("mongodb init error:", err)
+		return
+	}
+	defer worker.MongoConn.Close()
 
 	// 开启job调度
 	scheduleCtx, scheduleCancel := context.WithCancel(context.Background())

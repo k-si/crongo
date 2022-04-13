@@ -10,12 +10,6 @@ import (
 	"strings"
 )
 
-const (
-	// job event
-	Save   = 0
-	Delete = 1
-)
-
 var Watcher JobWatcher
 
 type JobWatcher struct {
@@ -28,19 +22,19 @@ type JobEvent struct {
 
 func WatchJob(ctx context.Context) {
 	Watcher = JobWatcher{}
-	go Watcher.Watch(ctx)
+	go Watcher.WatchJobDir(ctx)
+	go Watcher.watchKillDir(ctx)
 }
 
-func (w JobWatcher) Watch(ctx context.Context) {
-
+func (w JobWatcher) WatchJobDir(ctx context.Context) {
 	var (
 		err     error
 		getResp *clientv3.GetResponse
 	)
 
 	// 将所有job调入内存
-	if getResp, err = Connector.cli.Get(context.TODO(), common.JobDir, clientv3.WithPrefix()); err != nil {
-		log.Println("get revision err:", err)
+	if getResp, err = EtcdConn.cli.Get(context.TODO(), common.JobDir, clientv3.WithPrefix()); err != nil {
+		log.Println("watch jobDir, get revision err:", err)
 		return
 	}
 	for _, kv := range getResp.Kvs {
@@ -49,10 +43,10 @@ func (w JobWatcher) Watch(ctx context.Context) {
 			log.Println("job Unmarshal fail:", err)
 			continue
 		}
-		Scheduler.PushJobEvent(&JobEvent{Save, job})
+		Scheduler.PushJobEvent(&JobEvent{common.SaveJob, job})
 	}
 
-	watchChan := Connector.cli.Watch(context.TODO(), common.JobDir, clientv3.WithRev(getResp.Header.Revision+1), clientv3.WithPrefix())
+	watchChan := EtcdConn.cli.Watch(context.TODO(), common.JobDir, clientv3.WithRev(getResp.Header.Revision+1), clientv3.WithPrefix())
 
 	// 监听job变动
 	for {
@@ -64,9 +58,36 @@ func (w JobWatcher) Watch(ctx context.Context) {
 				for _, event := range watchResp.Events {
 					switch event.Type {
 					case mvccpb.PUT:
-						pushJobEvent(Save, event) // 交由调度模块处理
+						pushJobEvent(common.SaveJob, event) // 交由调度模块处理
 					case mvccpb.DELETE:
-						pushJobEvent(Delete, event)
+						pushJobEvent(common.DeleteJob, event)
+					}
+				}
+			}
+		}
+	}
+end:
+
+	return
+}
+
+func (w JobWatcher) watchKillDir(ctx context.Context) {
+
+	// 由于killDir所有键都自动租约过期，可认为启动worker时，killDir为空，无需指定版本号监听
+	watchChan := EtcdConn.cli.Watch(context.TODO(), common.KillDir, clientv3.WithPrefix())
+
+	for {
+		select {
+		case <-ctx.Done():
+			goto end
+		default:
+			for watchResp := range watchChan {
+				for _, event := range watchResp.Events {
+					switch event.Type {
+					case mvccpb.PUT:
+						pushJobEvent(common.KillJob, event)
+					case mvccpb.DELETE:
+						// kill目录下的key有租约可自动过期，无需处理delete事件
 					}
 				}
 			}
@@ -80,18 +101,25 @@ end:
 func pushJobEvent(opt int, e *clientv3.Event) {
 	var je *JobEvent
 
-	if opt == Save {
+	if opt == common.SaveJob {
 		job := &common.Job{}
 		if err := json.Unmarshal(e.Kv.Value, job); err != nil {
 			log.Println("pushJobEvent Unmarshal fail:", opt, err)
 			return
 		}
 		je = &JobEvent{opt, job}
-	} else if opt == Delete {
+	} else if opt == common.DeleteJob {
 		je = &JobEvent{
 			opt,
 			&common.Job{
 				Name: strings.TrimPrefix(string(e.Kv.Key), common.JobDir),
+			},
+		}
+	} else if opt == common.KillJob {
+		je = &JobEvent{
+			opt,
+			&common.Job{
+				Name: strings.TrimPrefix(string(e.Kv.Key), common.KillDir),
 			},
 		}
 	}
