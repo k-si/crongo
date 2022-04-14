@@ -100,7 +100,9 @@ func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
 				log.Println("[", je.Job.Name, "] killed during running")
 				jp.CancelFunc()
 				// todo: 关于kill的功能需要再细化分析
-				//jp.CancelCtx, jp.CancelFunc = context.WithCancel(context.TODO())
+				// 决策1. kill之后无法被调度，需要再delete清理
+				// 决策2. 增加relive功能，被kill的任务可重新拉回调度
+				// 决策3. 仅kill执行中任务，下次调度会继续执行
 			}
 		} else {
 			log.Println("try kill [", je.Job.Name, "] , but not in jobPlanTable")

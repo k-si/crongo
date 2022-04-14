@@ -18,11 +18,14 @@ POST /job/save
 }
 
 Delete job interface:
-GET /job/delete?name=test
+GET /job/delete/{name}
 
 Query job interface:
 GET /job/list
 
 Kill job interface:
-GET /job/kill?name=test
+GET /job/kill/{name}
+
+Query job log interface:
+GET /log/list/{name}?skip={0}&limit={20}
 ```

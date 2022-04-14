@@ -15,11 +15,14 @@ POST /job/save
 }
 
 删除任务接口：
-GET /job/delete?name=test
+GET /job/delete/{name}
 
 查询任务接口：
 GET /job/list
 
 杀死任务接口：
-GET /job/kill?name=test
+GET /job/kill/{name}
+
+查询任务日志接口：
+GET /log/list/{name}?skip={0}&limit={20}
 ```

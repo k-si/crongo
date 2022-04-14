@@ -14,8 +14,12 @@ type Config struct {
 
 type AppConfig struct {
 	BalanceOptimization bool `mapstructure:"balance_optimization"`
+	BalanceSleepTime    int  `mapstructure:"balance_sleep_time"`
 	JobEventChanSize    int  `mapstructure:"job_event_chan_size"`
 	JobPlanChanSize     int  `mapstructure:"job_plan_chan_size"`
+	JobLogChanSize      int  `mapstructure:"job_log_chan_size"`
+	JobLogBundleSize    int  `mapstructure:"job_log_bundle_size"`
+	JobLogSendInterval  int  `mapstructure:"job_log_send_interval"`
 }
 
 type EtcdConfig struct {

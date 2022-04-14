@@ -20,6 +20,8 @@ func InitArgs() {
 }
 
 func main() {
+	defer log.Println("worker stopped!")
+
 	var err error
 
 	// 初始化配置参数
@@ -38,6 +40,11 @@ func main() {
 		return
 	}
 	defer worker.MongoConn.Close()
+
+	// 开启job日志存储
+	logCtx, logCancel := context.WithCancel(context.TODO())
+	defer logCancel()
+	worker.LogJob(logCtx)
 
 	// 开启job调度
 	scheduleCtx, scheduleCancel := context.WithCancel(context.Background())
@@ -58,6 +65,4 @@ func main() {
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
-
-	log.Println("worker stopped!")
 }

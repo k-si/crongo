@@ -1,7 +1,15 @@
 app:
+  # worker调度优化
   balance_optimization: false
+  # 睡眠时间要小于任务最小执行时间
+  balance_sleep_time: 500
+  # goroutine间通信缓存大小
   job_event_chan_size: 1000
   job_plan_chan_size: 1000
+  job_log_chan_size: 1000
+  # log发送阀值
+  job_log_bundle_size: 100
+  job_log_send_interval: 1000
 etcd:
   endpoints:
     - 127.0.0.1:2379

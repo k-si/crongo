@@ -22,6 +22,8 @@ func InitArgs() {
 }
 
 func main() {
+	defer log.Println("server stopped!")
+
 	var err error
 
 	// 初始化配置
@@ -61,6 +63,4 @@ func main() {
 		log.Println("http shutdown error:", err)
 		return
 	}
-
-	log.Println("server stopped!")
 }
