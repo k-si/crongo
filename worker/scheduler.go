@@ -93,19 +93,17 @@ func (sdr JobScheduler) HandleJobEvent(je *JobEvent) {
 		sdr.JobPlanTable[je.Job.Name] = jp
 	case common.DeleteJob:
 		delete(sdr.JobPlanTable, je.Job.Name)
-	case common.KillJob:
+	case common.InterruptJob:
 		jp, ok := sdr.JobPlanTable[je.Job.Name]
 		if ok {
 			if jp.Status == Running {
-				log.Println("[", je.Job.Name, "] killed during running")
+				log.Println("[", je.Job.Name, "] interrupted during running")
 				jp.CancelFunc()
-				// todo: 关于kill的功能需要再细化分析
-				// 决策1. kill之后无法被调度，需要再delete清理
-				// 决策2. 增加relive功能，被kill的任务可重新拉回调度
-				// 决策3. 仅kill执行中任务，下次调度会继续执行
+				jp.Status = Waiting
+				jp.CancelCtx, jp.CancelFunc = context.WithCancel(context.Background())
 			}
 		} else {
-			log.Println("try kill [", je.Job.Name, "] , but not in jobPlanTable")
+			log.Println("try interrupt [", je.Job.Name, "] , but not in jobPlanTable")
 		}
 	}
 }

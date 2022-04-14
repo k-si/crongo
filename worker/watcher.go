@@ -74,7 +74,7 @@ end:
 func (w JobWatcher) watchKillDir(ctx context.Context) {
 
 	// 由于killDir所有键都自动租约过期，可认为启动worker时，killDir为空，无需指定版本号监听
-	watchChan := EtcdConn.cli.Watch(context.TODO(), common.KillDir, clientv3.WithPrefix())
+	watchChan := EtcdConn.cli.Watch(context.TODO(), common.InterruptDir, clientv3.WithPrefix())
 
 	for {
 		select {
@@ -85,7 +85,7 @@ func (w JobWatcher) watchKillDir(ctx context.Context) {
 				for _, event := range watchResp.Events {
 					switch event.Type {
 					case mvccpb.PUT:
-						pushJobEvent(common.KillJob, event)
+						pushJobEvent(common.InterruptJob, event)
 					case mvccpb.DELETE:
 						// kill目录下的key有租约可自动过期，无需处理delete事件
 					}
@@ -115,11 +115,11 @@ func pushJobEvent(opt int, e *clientv3.Event) {
 				Name: strings.TrimPrefix(string(e.Kv.Key), common.JobDir),
 			},
 		}
-	} else if opt == common.KillJob {
+	} else if opt == common.InterruptJob {
 		je = &JobEvent{
 			opt,
 			&common.Job{
-				Name: strings.TrimPrefix(string(e.Kv.Key), common.KillDir),
+				Name: strings.TrimPrefix(string(e.Kv.Key), common.InterruptDir),
 			},
 		}
 	}

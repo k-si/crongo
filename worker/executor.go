@@ -81,6 +81,7 @@ func (e JobExecutor) RunPlan(plan *JobPlan) {
 		// 释放锁
 		lock.UnLock()
 		plan.Status = Waiting
+		log.Println("[", plan.Job.Name, "] done, write to log")
 
 		// 交由logger存储结果日志
 		jl = &common.JobLog{

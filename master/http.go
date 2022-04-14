@@ -29,7 +29,7 @@ func NewRouter() *gin.Engine {
 		job.POST("/save", JobSave)
 		job.GET("/delete/:name", JobDelete)
 		job.GET("/list", JobList)
-		job.GET("/kill/:name", JobKill)
+		job.GET("/interrupt/:name", JobInterrupt)
 	}
 	jLog := r.Group("/log")
 	{
@@ -81,14 +81,14 @@ func JobList(ctx *gin.Context) {
 	common.Response(ctx, common.CodeSuccess, nil, jobs)
 }
 
-func JobKill(ctx *gin.Context) {
+func JobInterrupt(ctx *gin.Context) {
 	var err error
 	jobName := ctx.Param("name")
 	if jobName == "" {
 		common.Response(ctx, common.CodeInvalidParam, "缺少Job名称", nil)
 		return
 	}
-	if err = EtcdConn.KillJob(jobName); err != nil {
+	if err = EtcdConn.InterruptJob(jobName); err != nil {
 		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
 		return
 	}

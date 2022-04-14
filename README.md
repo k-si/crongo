@@ -23,8 +23,8 @@ GET /job/delete/{name}
 Query job interface:
 GET /job/list
 
-Kill job interface:
-GET /job/kill/{name}
+interrupt job interface:
+GET /job/interrupt/{name}
 
 Query job log interface:
 GET /log/list/{name}?skip={0}&limit={20}

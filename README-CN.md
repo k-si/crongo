@@ -20,8 +20,8 @@ GET /job/delete/{name}
 查询任务接口：
 GET /job/list
 
-杀死任务接口：
-GET /job/kill/{name}
+中断任务接口：
+GET /job/interrupt/{name}
 
 查询任务日志接口：
 GET /log/list/{name}?skip={0}&limit={20}

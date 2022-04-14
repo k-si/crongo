@@ -76,7 +76,7 @@ func (etcd EtcdConnector) ListJob() (jobs []*common.Job, err error) {
 	return
 }
 
-func (etcd EtcdConnector) KillJob(jobName string) (err error) {
+func (etcd EtcdConnector) InterruptJob(jobName string) (err error) {
 
 	var (
 		grantResp *clientv3.LeaseGrantResponse
@@ -86,7 +86,7 @@ func (etcd EtcdConnector) KillJob(jobName string) (err error) {
 	if grantResp, err = etcd.cli.Grant(context.TODO(), 1); err != nil {
 		return
 	}
-	if _, err = etcd.cli.Put(context.TODO(), common.KillDir+jobName, "", clientv3.WithLease(grantResp.ID)); err != nil {
+	if _, err = etcd.cli.Put(context.TODO(), common.InterruptDir+jobName, "", clientv3.WithLease(grantResp.ID)); err != nil {
 		return
 	}
 
