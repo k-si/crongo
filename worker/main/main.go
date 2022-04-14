@@ -41,6 +41,14 @@ func main() {
 	}
 	defer worker.MongoConn.Close()
 
+	// 注册worker
+	registryCtx, registryCancel := context.WithCancel(context.Background())
+	defer registryCancel()
+	if err = worker.RegistryWorker(registryCtx); err != nil {
+		log.Println("registry worker fail, error:", err)
+		return
+	}
+
 	// 开启job日志存储
 	logCtx, logCancel := context.WithCancel(context.TODO())
 	defer logCancel()

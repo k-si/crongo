@@ -9,7 +9,7 @@ app:
   job_log_chan_size: 1000
   # log发送阀值
   job_log_bundle_size: 100
-  job_log_send_interval: 1000
+  job_log_send_interval: 2000
 etcd:
   endpoints:
     - 127.0.0.1:2379

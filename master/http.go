@@ -35,6 +35,10 @@ func NewRouter() *gin.Engine {
 	{
 		jLog.GET("/list/:name", LogList)
 	}
+	worker := r.Group("/worker")
+	{
+		worker.GET("/list", WorkerList)
+	}
 
 	return r
 }
@@ -135,3 +139,16 @@ func LogList(ctx *gin.Context) {
 }
 
 // db.log.insert({"name":"test", "command":"echo -n hello", "output":"hello", "error_info":"", "start_time":1649860519, "end_time":1649860519, "expected_schedule_time":1649860519, "real_schedule_time":1649860519})
+
+func WorkerList(ctx *gin.Context) {
+	var (
+		err     error
+		workers []*common.Worker
+	)
+
+	if workers, err = EtcdConn.ListWorker(); err != nil {
+		common.Response(ctx, common.CodeInternalError, err.Error(), nil)
+		return
+	}
+	common.Response(ctx, common.CodeSuccess, nil, workers)
+}

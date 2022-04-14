@@ -7,6 +7,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
@@ -88,6 +89,20 @@ func (etcd EtcdConnector) InterruptJob(jobName string) (err error) {
 	}
 	if _, err = etcd.cli.Put(context.TODO(), common.InterruptDir+jobName, "", clientv3.WithLease(grantResp.ID)); err != nil {
 		return
+	}
+
+	return
+}
+
+func (etcd EtcdConnector) ListWorker() (workers []*common.Worker, err error) {
+	var getResp *clientv3.GetResponse
+
+	workers = make([]*common.Worker, 0)
+	if getResp, err = etcd.cli.Get(context.TODO(), common.WorkerDir, clientv3.WithPrefix()); err != nil {
+		return
+	}
+	for _, kv := range getResp.Kvs {
+		workers = append(workers, &common.Worker{IP: strings.TrimPrefix(string(kv.Key), common.WorkerDir)})
 	}
 
 	return

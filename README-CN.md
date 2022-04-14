@@ -5,14 +5,16 @@
 
 # 启动
 
-启动master，只启动一个实例
+服务依赖于etcd和mongodb，请先配置好环境。
+
+启动master
 
 ```shell
 cd master/main
 go run main.go
 ```
 
-启动worker，可启动多个实例
+启动worker
 
 ```shell
 cd worker/main
@@ -41,4 +43,7 @@ GET /job/interrupt/{name}
 
 查询任务日志接口：
 GET /log/list/{name}?skip={0}&limit={20}
+
+查询worker节点接口：
+GET /worker/list
 ```

@@ -23,6 +23,10 @@ type JobLog struct {
 	RealScheduleTime     int64  `json:"real_schedule_time" bson:"real_schedule_time"`
 }
 
+type Worker struct {
+	IP string `json:"ip"`
+}
+
 // http response format object
 type RespCode int64
 

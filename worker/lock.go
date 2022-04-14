@@ -37,7 +37,7 @@ func (lock *JobLock) Lock() (err error) {
 		goto Rollback
 	}
 
-	// 消费租约channel
+	// 消费租约
 	go func() {
 		var (
 			keepAliveResp *clientv3.LeaseKeepAliveResponse

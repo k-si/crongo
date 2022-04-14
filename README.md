@@ -8,6 +8,8 @@ table in memory. Multiple worker nodes can execute tasks concurrently.
 
 # Start
 
+The service depends on etcd and mongodb. Please configure the environment first.
+
 Start the master and start only one instance.
 
 ```shell
@@ -44,4 +46,7 @@ GET /job/interrupt/{name}
 
 Query job log interface:
 GET /log/list/{name}?skip={0}&limit={20}
+
+Query worker node interface:
+GET /worker/list
 ```
