@@ -6,7 +6,23 @@ distributed locks for multiple workers. The master module is responsible for the
 query of tasks on the HTTP interface, and the worker node is responsible Monitor etcd changes and maintain a scheduling
 table in memory. Multiple worker nodes can execute tasks concurrently.
 
-External exposure interface:
+# Start
+
+Start the master and start only one instance.
+
+```shell
+cd master/main
+go run main. go
+```
+
+Start worker to start multiple instances.
+
+```shell
+cd worker/main
+go run worker. go
+```
+
+# Api
 
 ```
 Save job interface:
@@ -23,7 +39,7 @@ GET /job/delete/{name}
 Query job interface:
 GET /job/list
 
-interrupt job interface:
+Interrupt job interface:
 GET /job/interrupt/{name}
 
 Query job log interface:
