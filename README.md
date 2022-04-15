@@ -1,10 +1,6 @@
 # Introduction
 
-The project is a distributed task scheduling service, which is mainly used to schedule and execute Linux crontab tasks.
-The service can start one master node and multiple worker nodes, Store crontab tasks through etcd and provide
-distributed locks for multiple workers. The master module is responsible for the addition, deletion, modification and
-query of tasks on the HTTP interface, and the worker node is responsible Monitor etcd changes and maintain a scheduling
-table in memory. Multiple worker nodes can execute tasks concurrently.
+The project is a distributed task scheduling service, which is mainly used to schedule and execute Linux crontab tasks. Store crontab tasks through etcd and provide distributed locks for multiple workers. The master module is responsible for the addition, deletion, modification and query of tasks on the HTTP interface. The worker node is responsible for monitoring etcd changes and maintaining a scheduling table in memory. Multiple worker nodes can execute tasks concurrently.
 
 # Start
 
